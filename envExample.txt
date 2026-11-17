@@ -1,0 +1,13 @@
+Como en python no se pueden definir direcamente los entornos ENV se definen directamente en la terminal:
+CORRER EN LA TERMINAL(poweshell) LO SIGUIENTE:
+
+SECRET_KEY=pon-aqui-una-clave-larga  !!!
+DB_SERVER=localhost\SQLEXPRESS
+DB_NAME=nova_sound
+DB_DRIVER=ODBC Driver 18 for SQL Server
+
+OPCION2
+# Autenticación de Windows:  DB_TRUSTED=1   (y deja DB_USER/DB_PASSWORD vacíos)
+DB_TRUSTED=0
+DB_USER=sa
+DB_PASSWORD=tu_contraseña

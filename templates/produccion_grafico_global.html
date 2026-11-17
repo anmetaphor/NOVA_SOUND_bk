@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Sound - Gráfico global</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='produccion.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <span class="drawer-brand">NOVA SOUND</span>
+                <button class="close-drawer" id="closeDrawer">✕</button>
+            </div>
+            <nav class="drawer-nav">
+                <a href="{{ url_for('dashboard') }}" class="drawer-link">Inicio</a>
+                <a href="{{ url_for('ordenes_produccion') }}" class="drawer-link active">Producción</a>
+                <a href="{{ url_for('ensamble_registro') }}" class="drawer-link">Ensamble</a>
+            </nav>
+            <div class="drawer-footer-nav">
+                <hr class="drawer-divider" style="margin: 0 0 6px 0;">
+                <a href="{{ url_for('configuracion') }}" class="drawer-link">
+                    <span style="font-size: 1.1rem;">⚙</span> Configuración
+                </a>
+                <a href="{{ url_for('logout') }}" class="drawer-link logout">Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <header class="top-navbar">
+            <div class="nav-left">
+                <span class="menu-icon" id="openDrawer">☰</span>
+                <span class="nav-title">Producción</span>
+            </div>
+            <div class="nav-center">
+                <div class="navbar-brand-logo">
+                    <svg viewBox="0 0 200 65" class="nav-wave-svg" xmlns="http://www.w3.org/2000/svg">
+                        <g id="wave-bars-prod"></g>
+                    </svg>
+                    <span class="navbar-brand-text">NOVA SOUND</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span class="user-badge">{{ user_badge }}</span>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+
+        <div class="sub-header-prod">
+            <span class="station-label">Estación de Producción | Línea {{ linea_activa }}</span>
+            <span class="page-main-title">Gráfico global</span>
+            
+            <div class="prod-dropdown-container" id="prodDropdown">
+                <button class="menu-dropdown-toggle" id="dropdownToggle">Menú de Producción ▾</button>
+                <div class="prod-dropdown-content">
+                    <a href="{{ url_for('ordenes_produccion') }}">Órdenes de producción</a>
+                    <a href="{{ url_for('detalles_pedido') }}">Detalles del pedido</a>
+                    <a href="{{ url_for('grafico_global') }}" class="active">Gráfico global</a>
+                    <a href="{{ url_for('grafico_pedido') }}">Gráfico por pedido</a>
+                    <a href="{{ url_for('crear_orden') }}">Crear orden nueva</a>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-body">
+            <div class="global-layout">
+                <div class="card global-chart-card">
+                    <div class="chart-tabs-header">
+                        <button class="btn-filters" type="button"><span class="filter-icon">⚙</span> Filtros</button>
+                        <nav class="chart-subtabs" id="chartTabs">
+                            <a href="#" class="tab-link active" data-tipo="colores">Vendidos por Color</a>
+                            <a href="#" class="tab-link" data-tipo="estados">Estados de pedido</a>
+                            <a href="#" class="tab-link" data-tipo="turnos">Cantidades por turno</a>
+                            <a href="#" class="tab-link" data-tipo="estimaciones">Estimaciones</a>
+                        </nav>
+                    </div>
+                    <form class="filters-panel" id="filtersPanel" onsubmit="return false;">
+                        <label>Desde<input type="date" id="fDesde"></label>
+                        <label>Hasta<input type="date" id="fHasta"></label>
+                        <button type="button" id="btnAplicar">Aplicar</button>
+                        <button type="button" class="btn-clear-link" id="btnQuitar">Quitar filtros</button>
+                    </form>
+
+                    <div class="chart-container-visual">
+                        <div class="y-axis" id="yAxis"></div>
+                        <div class="bars-area" id="barsArea"></div>
+                    </div>
+                    <div class="legend-row" id="legend"></div>
+                </div>
+
+                <div class="card global-side-card">
+                    <div class="inner-blue-box">
+                        <h3 id="sideTitulo">Modelos mas vendidos por color</h3>
+                        <p class="subtitle-desc" id="sideDesc"></p>
+                        <ul class="color-sales-list" id="sideLista"></ul>
+                    </div>
+                    <button class="btn-primary-custom" id="btnDocumento" type="button">Crear documento</button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-bar">
+            <span>Bocinas Bluetooth® · L1 / L2 / L3 · T1 · 05:00–14:00</span>
+            <span class="footer-right">NOVA SOUND · Producción · Uso interno</span>
+        </footer>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById('openDrawer');
+        const closeBtn = document.getElementById('closeDrawer');
+        const drawer = document.getElementById('sideDrawer');
+        const overlay = document.getElementById('sidebarOverlay');
+        function toggleDrawer(state) {
+            drawer.classList.toggle('open', state);
+            overlay.classList.toggle('active', state);
+        }
+        openBtn.addEventListener('click', () => toggleDrawer(true));
+        closeBtn.addEventListener('click', () => toggleDrawer(false));
+        overlay.addEventListener('click', () => toggleDrawer(false));
+
+        const dropdownContainer = document.getElementById('prodDropdown');
+        const dropdownToggle = document.getElementById('dropdownToggle');
+        if (dropdownToggle && dropdownContainer) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContainer.classList.toggle('active');
+            });
+            window.addEventListener('click', () => {
+                dropdownContainer.classList.remove('active');
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const temaGuardado = localStorage.getItem('nova_tema');
+            const fuenteGuardada = localStorage.getItem('nova_fuente');
+
+            if (temaGuardado && temaGuardado.includes('Tema Claro')) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            if (fuenteGuardada && fuenteGuardada.includes('Grande')) {
+                document.body.classList.add('large-text');
+            } else {
+                document.body.classList.remove('large-text');
+            }
+        });
+
+        function renderNavbarWave(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const totalBars = 31;
+            const center = (totalBars - 1) / 2;
+            const spacing = 4.2;
+            const startX = 18;
+            for (let i = 0; i < totalBars; i++) {
+                const distFromCenter = Math.abs(i - center);
+                const globalEnvelope = Math.exp(-Math.pow(distFromCenter / 10, 2));
+                const threePeaks = 0.25 + 0.75 * Math.pow(Math.cos((distFromCenter / 8) * Math.PI), 2);
+                let barHeight = 26 * globalEnvelope * threePeaks;
+                barHeight = Math.max(barHeight, 2);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', startX + i * spacing);
+                rect.setAttribute('y', 15 - barHeight / 2);
+                rect.setAttribute('width', '2');
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', '1');
+                rect.setAttribute('fill', '#ffffff');
+                container.appendChild(rect);
+            }
+        }
+        renderNavbarWave('wave-bars-prod');
+    </script>
+    <script src="{{ url_for('static', filename='api.js') }}"></script>
+    <script>
+        (function () {
+            const $ = (id) => document.getElementById(id);
+            const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const ALTURA = 270;                       // px disponibles para la barra más alta
+            const FIJOS = { azul: 'blue', negro: 'black', gris: 'grey' };
+            const PALETA = ['blue', 'alt1', 'alt2', 'alt3', 'alt4'];
+            const COLORES_CSS = { blue: '#3a86ff', black: '#000000', grey: '#adb5bd', alt1: '#e69f00', alt2: '#009e73', alt3: '#cc79a7', alt4: '#56b4e9' };
+            let tipo = 'colores';
+
+            function clase(nombre, i) {
+                if (tipo === 'colores' && FIJOS[nombre.toLowerCase()]) return FIJOS[nombre.toLowerCase()];
+                return PALETA[i % PALETA.length];
+            }
+            function techo(max) {                     // eje Y con 5 intervalos "redondos"
+                if (max <= 0) return 5;
+                const crudo = max / 5, mag = Math.pow(10, Math.floor(Math.log10(crudo)));
+                const paso = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((p) => p >= crudo);
+                return paso * 5;
+            }
+            function dibujar(d) {
+                const max = Math.max(0, ...d.series.flatMap((s) => s.valores));
+                const top = techo(max);
+                $('yAxis').innerHTML = [5, 4, 3, 2, 1, 0].map((k) => `<span>${Math.round(top * k / 5 * 100) / 100}</span>`).join('');
+                $('barsArea').innerHTML = d.labels.map((lab, i) =>
+                    '<div class="model-group">' + d.series.map((s, j) =>
+                        `<div class="bar ${clase(s.nombre, j)}" title="${esc(s.nombre)}: ${s.valores[i]}" style="height:${Math.round(s.valores[i] / top * ALTURA)}px;${s.valores[i] ? '' : 'visibility:hidden'}"></div>`).join('') +
+                    `<span class="x-label">${esc(lab)}</span></div>`).join('');
+                $('legend').innerHTML = d.series.length > 1 || tipo === 'colores'
+                    ? d.series.map((s, j) => `<span><i style="background:${COLORES_CSS[clase(s.nombre, j)]}"></i>${esc(s.nombre)}</span>`).join('') : '';
+                $('sideTitulo').textContent = d.titulo;
+                $('sideDesc').textContent = d.descripcion;
+                $('sideLista').innerHTML = d.resumen.length ? d.resumen.map((r) => `<li>${esc(r)}</li>`).join('') : '<li>Sin datos para el periodo seleccionado.</li>';
+            }
+            function qs() {
+                const p = new URLSearchParams({ tipo });
+                if ($('fDesde').value) p.set('desde', $('fDesde').value);
+                if ($('fHasta').value) p.set('hasta', $('fHasta').value);
+                return p.toString();
+            }
+            async function cargar() {
+                try { dibujar(await NS.getJSON('/api/produccion/grafico-global?' + qs())); }
+                catch (e) { NS.toast(e.message, false); }
+            }
+
+            $('chartTabs').addEventListener('click', (e) => {
+                const a = e.target.closest('.tab-link'); if (!a) return;
+                e.preventDefault();
+                document.querySelectorAll('#chartTabs .tab-link').forEach((x) => x.classList.toggle('active', x === a));
+                tipo = a.dataset.tipo; cargar();
+            });
+            $('btnAplicar').addEventListener('click', cargar);
+            $('btnQuitar').addEventListener('click', () => { $('fDesde').value = ''; $('fHasta').value = ''; cargar(); });
+            $('btnDocumento').addEventListener('click', () => { window.location.href = '/produccion/documento/global?' + qs(); });
+            cargar();
+        })();
+    </script>
+</body>
+</html>

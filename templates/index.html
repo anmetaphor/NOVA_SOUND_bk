@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Sound - Acceso</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="auth-wrapper" id="authWrapper">
+        
+        <!-- FORMULARIO: INICIAR SESIÓN (A la derecha) -->
+        <div class="form-container sign-in-container">
+            <form action="/login" method="POST">
+                <h1>Iniciar Sesión</h1>
+                <span class="subtitle">INGRESA TUS DATOS</span>
+                {% if error and modo == 'login' %}<div class="form-error">{{ error }}</div>{% endif %}
+
+                <div class="input-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" name="email" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="login-pass">Contraseña:</label>
+                    <input type="password" id="login-pass" name="password" required>
+                </div>
+
+                <button type="submit" class="btn-submit">INICIAR SESIÓN</button>
+            </form>
+        </div>
+
+        <!-- FORMULARIO: CREAR USUARIO (A la izquierda, oculto hasta deslizar) -->
+        <div class="form-container sign-up-container">
+            <form action="/register" method="POST">
+                <h1>Crear Cuenta</h1>
+                <span class="subtitle">REGISTRA TUS DATOS</span>
+                {% if error and modo == 'registro' %}<div class="form-error">{{ error }}</div>{% endif %}
+
+                <div class="input-group">
+                    <label for="reg-name">Nombre / ID Operador:</label>
+                    <input type="text" id="reg-name" name="nombre" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-email">Email:</label>
+                    <input type="email" id="reg-email" name="email" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-pass">Contraseña:</label>
+                    <input type="password" id="reg-pass" name="password" required minlength="8">
+                </div>
+
+                <button type="submit" class="btn-submit">REGISTRARSE</button>
+            </form>
+        </div>
+
+        <!-- CÍRCULO DESLIZANTE CON EL LOGO Y DESCRIPCIÓN -->
+        <div class="overlay-container">
+            <div class="overlay">
+                
+                <!-- Panel derecho -->
+                <div class="overlay-panel overlay-left">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 280 90" class="wave-svg" xmlns="http://www.w3.org/2000/svg">
+                            <g id="wave-bars-left"></g>
+                        </svg>
+                        <span class="brand-name">NOVA SOUND</span>
+                    </div>
+
+                    <h2>¡Bienvenido!</h2>
+                    <p class="system-desc">
+                        <strong>Sistema de Gestión de Producción, Calidad y Trazabilidad de Bocinas Bluetooth</strong><br><br>
+                        Accede con tu cuenta individual asignada para registrar operaciones, consultar lotes de empaque y gestionar el flujo de embarque.
+                    </p>
+                    <button type="button" class="btn-ghost" id="btnShowRegister">CREAR USUARIO</button>
+                </div>
+
+                <!-- Panel izquierdo -->
+                <div class="overlay-panel overlay-right">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 280 90" class="wave-svg" xmlns="http://www.w3.org/2000/svg">
+                            <g id="wave-bars-right"></g>
+                        </svg>
+                        <span class="brand-name">NOVA SOUND</span>
+                    </div>
+
+                    <h2>¡Únete al Sistema!</h2>
+                    <p class="system-desc">
+                        <strong>Sistema de Gestión de Producción, Calidad y Trazabilidad de Bocinas Bluetooth</strong><br><br>
+                        ¿Ya cuentas con una credencial asignada para registrar operaciones y consultar lotes?
+                    </p>
+                    <button type="button" class="btn-ghost" id="btnShowLogin">YA TENGO CUENTA</button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script para animar el círculo -->
+    <script>
+        const authWrapper = document.getElementById('authWrapper');
+        {% if modo == 'registro' %}authWrapper.classList.add('register-mode');{% endif %}
+        document.getElementById('btnShowRegister').addEventListener('click', () => {
+            authWrapper.classList.add('register-mode');
+        });
+        document.getElementById('btnShowLogin').addEventListener('click', () => {
+            authWrapper.classList.remove('register-mode');
+        });
+
+        function renderSoundWave(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const totalBars = 47;
+            const center = (totalBars - 1) / 2;
+            const spacing = 5.6;
+            const startX = 10;
+
+            for (let i = 0; i < totalBars; i++) {
+                const distFromCenter = Math.abs(i - center);
+                const globalEnvelope = Math.exp(-Math.pow(distFromCenter / 15.5, 2));
+                const threePeaks = 0.22 + 0.78 * Math.pow(Math.cos((distFromCenter / 12.2) * Math.PI), 2);
+                let barHeight = 78 * globalEnvelope * threePeaks;
+                barHeight = Math.max(barHeight, 2.5);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', startX + i * spacing);
+                rect.setAttribute('y', 45 - barHeight / 2);
+                rect.setAttribute('width', '2.8');
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', '1.4');
+                rect.setAttribute('fill', '#ffffff');
+                container.appendChild(rect);
+            }
+        }
+        renderSoundWave('wave-bars-left');
+        renderSoundWave('wave-bars-right');
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Sound - Registro de Ensamble</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='produccion.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <span class="drawer-brand">NOVA SOUND</span>
+                <button class="close-drawer" id="closeDrawer">✕</button>
+            </div>
+            <nav class="drawer-nav">
+                <a href="{{ url_for('dashboard') }}" class="drawer-link">Inicio</a>
+                <a href="{{ url_for('ordenes_produccion') }}" class="drawer-link">Producción</a>
+                <a href="{{ url_for('ensamble_registro') }}" class="drawer-link active">Ensamble</a>
+            </nav>
+            <div class="drawer-footer-nav">
+                <hr class="drawer-divider" style="margin: 0 0 6px 0;">
+                <a href="{{ url_for('configuracion') }}" class="drawer-link">
+                    <span style="font-size: 1.1rem;">⚙</span> Configuración
+                </a>
+                <a href="{{ url_for('logout') }}" class="drawer-link logout">Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <header class="top-navbar">
+            <div class="nav-left">
+                <span class="menu-icon" id="openDrawer">☰</span>
+                <span class="nav-title">Ensamble</span>
+            </div>
+            <div class="nav-center">
+                <div class="navbar-brand-logo">
+                    <svg viewBox="0 0 200 65" class="nav-wave-svg" xmlns="http://www.w3.org/2000/svg">
+                        <g id="wave-bars-prod"></g>
+                    </svg>
+                    <span class="navbar-brand-text">NOVA SOUND</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span class="user-badge">{{ user_badge }}</span>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+
+        <div class="sub-header-prod">
+            <span class="station-label">Línea de Ensamble | {{ linea_activa }}</span>
+            <span class="page-main-title">Registro de Ensamble</span>
+            
+            <div class="prod-dropdown-container" id="prodDropdown">
+                <button class="menu-dropdown-toggle" id="dropdownToggle">Menú de Ensamble ▾</button>
+                <div class="prod-dropdown-content">
+                    <a href="{{ url_for('ensamble_registro') }}" class="active">Registrar producción</a>
+                    <a href="{{ url_for('ensamble_historico') }}">Histórico y Reportes</a>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-body">
+            <div class="create-order-grid">
+                <div class="left-form-col">
+                    <div class="card form-box-card">
+                        <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: #c77dff;">Datos de Ensamble (* Campos obligatorios)</h3>
+
+                        <div class="form-group-row">
+                            <label>Turno *</label>
+                            <select class="input-field select-field" id="fTurno">
+                                {% for t in turnos %}<option value="{{ t.idTurno }}" {{ 'selected' if t.idTurno == turno_actual.idTurno }}>Turno {{ loop.index }} ({{ t.HorarioInicio.strftime('%H:%M') }} – {{ t.HorarioFin.strftime('%H:%M') }})</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Línea de Ensamble *</label>
+                            <select class="input-field select-field" id="fLinea">
+                                {% for l in lineas %}<option value="{{ l.idLinea }}" {{ 'selected' if l.NombreLinea == linea_activa }}>Línea {{ l.NombreLinea }}</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Orden Activa *</label>
+                            <input type="text" class="input-field" id="fOrden" placeholder="Ej. OP-261016-03" autocomplete="off">
+                            <div class="inline-msg" id="msgOrden"></div>
+                        </div>
+
+                        <div class="form-group-center" style="margin: 20px 0;">
+                            <label>Cantidad ensamblada *</label>
+                            <div class="counter-control">
+                                <button class="count-btn" type="button" id="btnMenos">-</button>
+                                <span class="count-val" id="fCantidad" contenteditable="true" inputmode="numeric" spellcheck="false">1</span>
+                                <button class="count-btn" type="button" id="btnMas">+</button>
+                            </div>
+                            <div class="inline-msg" style="text-align:center;">Escribe la cantidad o usa +/− (Mayús = de 10 en 10)</div>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Observaciones (Opcional)</label>
+                            <textarea class="input-field" id="fObs" rows="3" maxlength="150" placeholder="Añade una descripción o nota del lote..."></textarea>
+                        </div>
+
+                        <div class="order-actions-footer" style="margin-top: 20px;">
+                            <button class="btn-clear-orange" id="btnCancelar" type="button" style="flex: 1;">Cancelar</button>
+                            <button class="btn-accept-green" id="btnGuardar" type="button" style="flex: 1;">Guardar en inventario</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-form-col">
+                    <div class="card summary-box-card" style="text-align: center;">
+                        <h3 style="color: #4cc9f0; margin-bottom: 10px;">Referencia del Modelo</h3>
+                        <div style="background: #121216; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <p style="font-weight: 700; font-size: 1.1rem; color: #fff;" id="rModelo">Selecciona una orden</p>
+                            <p style="font-size: 0.85rem; color: #a0a0b0;" id="rDetalle">Escribe el código de la orden activa</p>
+                        </div>
+                        <p style="font-size: 0.85rem; color: #d8b4fe; text-align: left;">
+                            <strong>Operador responsable:</strong> {{ usuario.nombre }}<br>
+                            <strong>Fecha de registro:</strong> {{ hoy_iso.split('-')[::-1] | join('/') }}<br>
+                            <strong>Validación:</strong> Cantidad &gt; 0 y no mayor a lo pendiente de la orden
+                        </p>
+                    </div>
+
+                    <div class="card table-summary-card">
+                        <h3 style="font-size: 1rem; margin-bottom: 10px; color: #fff;">Últimos registros del día</h3>
+                        <ul id="listaUltimos" style="list-style: none; font-size: 0.85rem; color: #a0a0b0; display: flex; flex-direction: column; gap: 8px;">
+                            {% for u in ultimos %}
+                            <li style="display: flex; justify-content: space-between; border-bottom: 1px solid #2d2b35; padding-bottom: 6px;">
+                                <span>{{ u.linea }} · {{ u.orden }}</span> <strong style="color: #2b9348;">+{{ u.cantidad }} u.</strong>
+                            </li>
+                            {% else %}
+                            <li>Aún no hay registros hoy.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-bar">
+            <span>Bocinas Bluetooth® · L1 / L2 / L3 · T1 · 05:00–14:00</span>
+            <span class="footer-right">NOVA SOUND · Ensamble · Uso interno</span>
+        </footer>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById('openDrawer');
+        const closeBtn = document.getElementById('closeDrawer');
+        const drawer = document.getElementById('sideDrawer');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        function toggleDrawer(state) {
+            drawer.classList.toggle('open', state);
+            overlay.classList.toggle('active', state);
+        }
+        
+        openBtn.addEventListener('click', () => toggleDrawer(true));
+        closeBtn.addEventListener('click', () => toggleDrawer(false));
+        overlay.addEventListener('click', () => toggleDrawer(false));
+
+        const dropdownContainer = document.getElementById('prodDropdown');
+        const dropdownToggle = document.getElementById('dropdownToggle');
+        if (dropdownToggle && dropdownContainer) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContainer.classList.toggle('active');
+            });
+            window.addEventListener('click', () => {
+                dropdownContainer.classList.remove('active');
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const temaGuardado = localStorage.getItem('nova_tema');
+            const fuenteGuardada = localStorage.getItem('nova_fuente');
+
+            if (temaGuardado && temaGuardado.includes('Tema Claro')) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            if (fuenteGuardada && fuenteGuardada.includes('Grande')) {
+                document.body.classList.add('large-text');
+            } else {
+                document.body.classList.remove('large-text');
+            }
+        });
+
+        function renderNavbarWave(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const totalBars = 31;
+            const center = (totalBars - 1) / 2;
+            const spacing = 4.2;
+            const startX = 18;
+            for (let i = 0; i < totalBars; i++) {
+                const distFromCenter = Math.abs(i - center);
+                const globalEnvelope = Math.exp(-Math.pow(distFromCenter / 10, 2));
+                const threePeaks = 0.25 + 0.75 * Math.pow(Math.cos((distFromCenter / 8) * Math.PI), 2);
+                let barHeight = 26 * globalEnvelope * threePeaks;
+                barHeight = Math.max(barHeight, 2);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', startX + i * spacing);
+                rect.setAttribute('y', 15 - barHeight / 2);
+                rect.setAttribute('width', '2');
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', '1');
+                rect.setAttribute('fill', '#ffffff');
+                container.appendChild(rect);
+            }
+        }
+        renderNavbarWave('wave-bars-prod');
+    </script>
+    <script src="{{ url_for('static', filename='api.js') }}"></script>
+    <script>
+        (function () {
+            const $ = (id) => document.getElementById(id);
+            const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            let ordenInfo = null;
+
+            const leerCantidad = () => parseInt($('fCantidad').textContent.replace(/\D/g, ''), 10) || 0;
+            const ponerCantidad = (n) => { $('fCantidad').textContent = Math.min(1000, Math.max(1, n)); };
+            $('btnMenos').addEventListener('click', (e) => ponerCantidad(leerCantidad() - (e.shiftKey ? 10 : 1)));
+            $('btnMas').addEventListener('click', (e) => ponerCantidad(leerCantidad() + (e.shiftKey ? 10 : 1)));
+            $('fCantidad').addEventListener('blur', () => ponerCantidad(leerCantidad()));
+            $('fCantidad').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
+
+            async function buscarOrden() {
+                const codigo = $('fOrden').value.trim();
+                $('msgOrden').textContent = ''; ordenInfo = null;
+                if (!codigo) return;
+                try {
+                    const o = await NS.getJSON('/api/ensamble/orden?codigo=' + encodeURIComponent(codigo));
+                    ordenInfo = o;
+                    $('rModelo').textContent = o.modelo + ' / ' + o.color;
+                    $('rDetalle').textContent = o.codigo + ' · ' + o.cliente + ' · ' + o.producido + ' de ' + o.objetivo + ' u. (' + o.pendiente + ' pendientes)';
+                    if (o.estado !== 'En proceso') $('msgOrden').textContent = 'La orden está ' + o.estado + '.';
+                } catch (e) {
+                    $('rModelo').textContent = 'Orden no encontrada'; $('rDetalle').textContent = '';
+                    $('msgOrden').textContent = e.message;
+                }
+            }
+            $('fOrden').addEventListener('change', buscarOrden);
+
+            async function refrescarUltimos() {
+                try {
+                    const filas = await NS.getJSON('/api/ensamble/ultimos');
+                    $('listaUltimos').innerHTML = filas.length ? filas.map((u) =>
+                        `<li style="display:flex;justify-content:space-between;border-bottom:1px solid #2d2b35;padding-bottom:6px;"><span>${esc(u.linea)} · ${esc(u.orden)}</span> <strong style="color:#2b9348;">+${u.cantidad} u.</strong></li>`).join('')
+                        : '<li>Aún no hay registros hoy.</li>';
+                } catch (_) { /* no bloquea */ }
+            }
+            function limpiar() {
+                $('fOrden').value = ''; $('fObs').value = ''; ponerCantidad(1); ordenInfo = null;
+                $('msgOrden').textContent = ''; $('rModelo').textContent = 'Selecciona una orden'; $('rDetalle').textContent = 'Escribe el código de la orden activa';
+            }
+            $('btnCancelar').addEventListener('click', limpiar);
+
+            $('btnGuardar').addEventListener('click', async () => {
+                const btn = $('btnGuardar'); btn.disabled = true;
+                try {
+                    const r = await NS.postJSON('/api/ensamble/registros', {
+                        idTurno: $('fTurno').value, idLinea: $('fLinea').value, orden: $('fOrden').value,
+                        cantidad: leerCantidad(), observaciones: $('fObs').value,
+                    });
+                    NS.toast(`${r.codigoRegistro}: ${r.piezas} pieza(s) registradas (${r.primeraSerie} … ${r.ultimaSerie})` + (r.ordenFinalizada ? ' · Orden completada' : ''));
+                    const codigo = $('fOrden').value;
+                    limpiar(); refrescarUltimos();
+                    if (!r.ordenFinalizada) { $('fOrden').value = codigo; buscarOrden(); }
+                } catch (e) { NS.toast(e.message, false); }
+                finally { btn.disabled = false; }
+            });
+        })();
+    </script>
+</body>
+</html>

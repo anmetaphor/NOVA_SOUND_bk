@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Sound - Configuración del Sistema</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='produccion.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <span class="drawer-brand">NOVA SOUND</span>
+                <button class="close-drawer" id="closeDrawer">✕</button>
+            </div>
+            <nav class="drawer-nav">
+                <a href="{{ url_for('dashboard') }}" class="drawer-link">Inicio</a>
+                <a href="{{ url_for('ordenes_produccion') }}" class="drawer-link">Producción</a>
+                <a href="{{ url_for('ensamble_registro') }}" class="drawer-link">Ensamble</a>
+            </nav>
+            <div class="drawer-footer-nav">
+                <hr class="drawer-divider" style="margin: 0 0 6px 0;">
+                <a href="{{ url_for('configuracion') }}" class="drawer-link active">
+                    <span style="font-size: 1.1rem;">⚙</span> Configuración
+                </a>
+                <a href="{{ url_for('logout') }}" class="drawer-link logout">Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <header class="top-navbar">
+            <div class="nav-left">
+                <span class="menu-icon" id="openDrawer">☰</span>
+                <span class="nav-title">Configuración del Sistema</span>
+            </div>
+            <div class="nav-center">
+                <div class="navbar-brand-logo">
+                    <svg viewBox="0 0 200 65" class="nav-wave-svg" xmlns="http://www.w3.org/2000/svg">
+                        <g id="wave-bars-prod"></g>
+                    </svg>
+                    <span class="navbar-brand-text">NOVA SOUND</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span class="user-badge">{{ user_badge }}</span>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+
+        <div class="sub-header-prod">
+            <span class="station-label">Panel General | Planta Saltillo</span>
+            <span class="page-main-title">Ajustes y Permisos</span>
+        </div>
+
+        <main class="main-body">
+            <div class="create-order-grid">
+                <div class="left-form-col">
+                    <div class="card form-box-card" style="border-left: 4px solid #5a189a;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: #c77dff;">⚙ Configuración Técnica y Permisos (Gerencia)</h3>
+                        <p style="font-size: 0.8rem; color: #a0a0b0; margin-bottom: 20px;">
+                            Área restringida para asignación de roles, permisos de operarios y parámetros de líneas.
+                        </p>
+
+                        <div class="form-group-row">
+                            <label>Gestionar Rol de Usuario</label>
+                            <select class="input-field select-field" id="selUsuario">
+                                {% for u in usuarios %}<option value="{{ u.id }}" data-nivel="{{ niveles.items() | selectattr(1, 'equalto', u.rol) | map(attribute=0) | first }}">{{ u.nombre }} ({{ u.rol }})</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Nivel de Permisos Asignado</label>
+                            <select class="input-field select-field" id="selNivel">
+                                <option value="1">Nivel 1: Operador (Captura básica y visualización)</option>
+                                <option value="2">Nivel 2: Inspector (Liberación y rechazos)</option>
+                                <option value="3">Nivel 3: Gerente / Admin (Configuración total y autorizaciones)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Asignación de Línea Activa (esta sesión)</label>
+                            <select class="input-field select-field" id="selLinea">
+                                {% for l in lineas %}<option value="{{ l.NombreLinea }}" {{ 'selected' if l.NombreLinea == linea_activa }}>Línea {{ l.NombreLinea }}</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        <button class="btn-blue-action" id="btnGuardarPermisos" type="button" style="margin-top: 15px;">Guardar cambios de permisos</button>
+                    </div>
+                </div>
+
+                <div class="right-form-col">
+                    <div class="card summary-box-card">
+                        <h3 style="color: #4cc9f0; margin-bottom: 15px;">🎨 Preferencias Visuales y Estéticas</h3>
+                        <p style="font-size: 0.85rem; color: #a0a0b0; margin-bottom: 15px;">
+                            Personaliza la apariencia de tu interfaz de trabajo en planta.
+                        </p>
+
+                        <div class="form-group-row">
+                            <label>Tema de Interfaz</label>
+                            <select class="input-field select-field">
+                                <option>Modo Oscuro Industrial (Predeterminado Nova Sound)</option>
+                                <option>Tema Claro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Tamaño de Fuente en Tablas</label>
+                            <select class="input-field select-field">
+                                <option>Estándar</option>
+                                <option>Grande (Recomendado para Tablets)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-row">
+                            <label>Sonido de Alerta de Escaneo</label>
+                            <select class="input-field select-field">
+                                <option>Activado (Beep estándar)</option>
+                                <option>Silencioso</option>
+                            </select>
+                        </div>
+
+                        <button class="btn-accept-green" id="btnGuardarPreferencias" style="width: 100%; margin-top: 15px; padding: 10px; font-weight: 700; border-radius: 6px; border:none; cursor:pointer;">Aplicar preferencias</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-bar">
+            <span>Bocinas Bluetooth® · L1 / L2 / L3 · T1 · 05:00–14:00</span>
+            <span class="footer-right">NOVA SOUND · Configuración · Uso interno</span>
+        </footer>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById('openDrawer');
+        const closeBtn = document.getElementById('closeDrawer');
+        const drawer = document.getElementById('sideDrawer');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        function toggleDrawer(state) {
+            drawer.classList.toggle('open', state);
+            overlay.classList.toggle('active', state);
+        }
+        
+        openBtn.addEventListener('click', () => toggleDrawer(true));
+        closeBtn.addEventListener('click', () => toggleDrawer(false));
+        overlay.addEventListener('click', () => toggleDrawer(false));
+
+        document.getElementById('btnGuardarPreferencias').addEventListener('click', () => {
+            const selects = document.querySelectorAll('.card.summary-box-card select');
+            const tema = selects[0].value;
+            const fuente = selects[1].value;
+
+            localStorage.setItem('nova_tema', tema);
+            localStorage.setItem('nova_fuente', fuente);
+
+            alert('¡Preferencias aplicadas con éxito a todo el sistema!');
+
+            if (tema.includes('Tema Claro')) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            if (fuente.includes('Grande')) {
+                document.body.classList.add('large-text');
+            } else {
+                document.body.classList.remove('large-text');
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const temaGuardado = localStorage.getItem('nova_tema');
+            const fuenteGuardada = localStorage.getItem('nova_fuente');
+
+            if (temaGuardado && temaGuardado.includes('Tema Claro')) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            if (fuenteGuardada && fuenteGuardada.includes('Grande')) {
+                document.body.classList.add('large-text');
+            } else {
+                document.body.classList.remove('large-text');
+            }
+        });
+
+        function renderNavbarWave(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const totalBars = 31;
+            const center = (totalBars - 1) / 2;
+            const spacing = 4.2;
+            const startX = 18;
+            for (let i = 0; i < totalBars; i++) {
+                const distFromCenter = Math.abs(i - center);
+                const globalEnvelope = Math.exp(-Math.pow(distFromCenter / 10, 2));
+                const threePeaks = 0.25 + 0.75 * Math.pow(Math.cos((distFromCenter / 8) * Math.PI), 2);
+                let barHeight = 26 * globalEnvelope * threePeaks;
+                barHeight = Math.max(barHeight, 2);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', startX + i * spacing);
+                rect.setAttribute('y', 15 - barHeight / 2);
+                rect.setAttribute('width', '2');
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', '1');
+                rect.setAttribute('fill', '#ffffff');
+                container.appendChild(rect);
+            }
+        }
+        renderNavbarWave('wave-bars-prod');
+    </script>
+    <script src="{{ url_for('static', filename='api.js') }}"></script>
+    <script>
+        (function () {
+            const selUsuario = document.getElementById('selUsuario');
+            const selNivel = document.getElementById('selNivel');
+            const sincronizar = () => {
+                const op = selUsuario.options[selUsuario.selectedIndex];
+                if (op) selNivel.value = op.dataset.nivel || '1';
+            };
+            selUsuario.addEventListener('change', sincronizar);
+            sincronizar();
+
+            document.getElementById('btnGuardarPermisos').addEventListener('click', async () => {
+                const btn = document.getElementById('btnGuardarPermisos'); btn.disabled = true;
+                try {
+                    await NS.postJSON('/api/configuracion/linea', { linea: document.getElementById('selLinea').value });
+                    const r = await NS.postJSON('/api/configuracion/rol', { idUsuario: Number(selUsuario.value), nivel: Number(selNivel.value) });
+                    const op = selUsuario.options[selUsuario.selectedIndex];
+                    op.dataset.nivel = selNivel.value;
+                    op.textContent = op.textContent.replace(/\([^)]*\)$/, '(' + r.rol + ')');
+                    NS.toast('Cambios guardados.');
+                    setTimeout(() => window.location.reload(), 900);   // refresca la línea activa en los encabezados
+                } catch (e) { NS.toast(e.message, false); }
+                finally { btn.disabled = false; }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Sound - Crear orden nueva</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='produccion.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <span class="drawer-brand">NOVA SOUND</span>
+                <button class="close-drawer" id="closeDrawer">✕</button>
+            </div>
+            <nav class="drawer-nav">
+                <a href="{{ url_for('dashboard') }}" class="drawer-link">Inicio</a>
+                <a href="{{ url_for('ordenes_produccion') }}" class="drawer-link active">Producción</a>
+                <a href="{{ url_for('ensamble_registro') }}" class="drawer-link">Ensamble</a>
+            </nav>
+            <div class="drawer-footer-nav">
+                <hr class="drawer-divider" style="margin: 0 0 6px 0;">
+                <a href="{{ url_for('configuracion') }}" class="drawer-link">
+                    <span style="font-size: 1.1rem;">⚙</span> Configuración
+                </a>
+                <a href="{{ url_for('logout') }}" class="drawer-link logout">Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <header class="top-navbar">
+            <div class="nav-left">
+                <span class="menu-icon" id="openDrawer">☰</span>
+                <span class="nav-title">Producción</span>
+            </div>
+            <div class="nav-center">
+                <div class="navbar-brand-logo">
+                    <svg viewBox="0 0 200 65" class="nav-wave-svg" xmlns="http://www.w3.org/2000/svg">
+                        <g id="wave-bars-prod"></g>
+                    </svg>
+                    <span class="navbar-brand-text">NOVA SOUND</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span class="user-badge">{{ user_badge }}</span>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+
+        <div class="sub-header-prod">
+            <span class="station-label">Estación de Producción | Línea {{ linea_activa }}</span>
+            <span class="page-main-title">Crear orden nueva</span>
+            
+            <div class="prod-dropdown-container" id="prodDropdown">
+                <button class="menu-dropdown-toggle" id="dropdownToggle">Menú de Producción ▾</button>
+                <div class="prod-dropdown-content">
+                    <a href="{{ url_for('ordenes_produccion') }}">Órdenes de producción</a>
+                    <a href="{{ url_for('detalles_pedido') }}">Detalles del pedido</a>
+                    <a href="{{ url_for('grafico_global') }}">Gráfico global</a>
+                    <a href="{{ url_for('grafico_pedido') }}">Gráfico por pedido</a>
+                    <a href="{{ url_for('crear_orden') }}" class="active">Crear orden nueva</a>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-body">
+            <div class="create-order-grid">
+                <div class="left-form-col">
+                    <div class="card form-box-card">
+                        <div class="form-group-row">
+                            <label>Cliente</label>
+                            <input type="text" class="input-field" id="fCliente" list="listaClientes" maxlength="255" placeholder="Nombre del cliente" autocomplete="off">
+                            <datalist id="listaClientes">
+                                {% for c in clientes %}<option value="{{ c }}">{% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="form-group-row">
+                            <label>Fecha compromiso</label>
+                            <input type="date" class="input-field" id="fFecha" min="{{ hoy_iso }}" value="{{ hoy_iso }}">
+                        </div>
+                        <div class="form-group-row">
+                            <label>Responsable</label>
+                            <input type="text" class="input-field" id="fResponsable" value="{{ usuario.nombre }}" readonly>
+                        </div>
+                        <div class="form-group-row">
+                            <label>Linea</label>
+                            <select class="input-field select-field" id="fLinea">
+                                {% for l in lineas %}<option value="{{ l.NombreLinea }}" {{ 'selected' if l.NombreLinea == linea_activa }}>{{ l.NombreLinea }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn-blue-action" id="btnDetalle" type="button">Agregar detalle</button>
+                    </div>
+
+                    <div class="card form-box-card">
+                        <div class="form-row-dual">
+                            <div class="form-group-col">
+                                <label>Modelo</label>
+                                <select class="input-field select-field" id="fModelo">
+                                    {% for m in modelos %}<option>{{ m.Nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group-col">
+                                <label>Color</label>
+                                <input type="text" class="input-field" id="fColor" maxlength="50" placeholder="Ej. Azul">
+                            </div>
+                        </div>
+                        <div class="form-group-center">
+                            <label>Cantidad solicitada</label>
+                            <div class="counter-control">
+                                <button class="count-btn" type="button" id="btnMenos">-</button>
+                                <span class="count-val" id="fCantidad">1</span>
+                                <button class="count-btn" type="button" id="btnMas">+</button>
+                            </div>
+                        </div>
+                        <button class="btn-blue-action" id="btnProducto" type="button">Agregar producto</button>
+                        <div class="inline-msg" id="msgProducto"></div>
+                    </div>
+                </div>
+
+                <div class="right-form-col">
+                    <div class="card summary-box-card">
+                        <h3>Detalles de la orden:</h3>
+                        <p><strong>Cliente:</strong> <span id="sCliente">—</span></p>
+                        <p><strong>Fecha entrega:</strong> <span id="sFecha">—</span></p>
+                        <p><strong>Responsable de la orden:</strong> <span id="sResponsable">{{ usuario.nombre }}</span></p>
+                        <p><strong>Linea:</strong> <span id="sLinea">{{ linea_activa }}</span></p>
+                    </div>
+
+                    <div class="card table-summary-card">
+                        <table class="prod-table small-table">
+                            <thead>
+                                <tr>
+                                    <th>Modelo</th>
+                                    <th>Cantidad</th>
+                                    <th>Color</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyItems">
+                                <tr class="empty-row"><td colspan="4">Aún no hay productos.</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="order-actions-footer">
+                            <button class="btn-accept-green" id="btnAceptar" type="button">Aceptar orden</button>
+                            <button class="btn-clear-orange" id="btnLimpiar" type="button">Limpiar</button>
+                        </div>
+                        <button class="btn-doc-purple" id="btnDocumento" type="button">Crear documento</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-bar">
+            <span>Bocinas Bluetooth® · L1 / L2 / L3 · T1 · 05:00–14:00</span>
+            <span class="footer-right">NOVA SOUND · Producción · Uso interno</span>
+        </footer>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById('openDrawer');
+        const closeBtn = document.getElementById('closeDrawer');
+        const drawer = document.getElementById('sideDrawer');
+        const overlay = document.getElementById('sidebarOverlay');
+        function toggleDrawer(state) {
+            drawer.classList.toggle('open', state);
+            overlay.classList.toggle('active', state);
+        }
+        openBtn.addEventListener('click', () => toggleDrawer(true));
+        closeBtn.addEventListener('click', () => toggleDrawer(false));
+        overlay.addEventListener('click', () => toggleDrawer(false));
+
+        const dropdownContainer = document.getElementById('prodDropdown');
+        const dropdownToggle = document.getElementById('dropdownToggle');
+        if (dropdownToggle && dropdownContainer) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContainer.classList.toggle('active');
+            });
+            window.addEventListener('click', () => {
+                dropdownContainer.classList.remove('active');
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const temaGuardado = localStorage.getItem('nova_tema');
+            const fuenteGuardada = localStorage.getItem('nova_fuente');
+
+            if (temaGuardado && temaGuardado.includes('Tema Claro')) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            if (fuenteGuardada && fuenteGuardada.includes('Grande')) {
+                document.body.classList.add('large-text');
+            } else {
+                document.body.classList.remove('large-text');
+            }
+        });
+
+        function renderNavbarWave(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const totalBars = 31;
+            const center = (totalBars - 1) / 2;
+            const spacing = 4.2;
+            const startX = 18;
+            for (let i = 0; i < totalBars; i++) {
+                const distFromCenter = Math.abs(i - center);
+                const globalEnvelope = Math.exp(-Math.pow(distFromCenter / 10, 2));
+                const threePeaks = 0.25 + 0.75 * Math.pow(Math.cos((distFromCenter / 8) * Math.PI), 2);
+                let barHeight = 26 * globalEnvelope * threePeaks;
+                barHeight = Math.max(barHeight, 2);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', startX + i * spacing);
+                rect.setAttribute('y', 15 - barHeight / 2);
+                rect.setAttribute('width', '2');
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', '1');
+                rect.setAttribute('fill', '#ffffff');
+                container.appendChild(rect);
+            }
+        }
+        renderNavbarWave('wave-bars-prod');
+    </script>
+    <script src="{{ url_for('static', filename='api.js') }}"></script>
+    <script>
+        (function () {
+            const $ = (id) => document.getElementById(id);
+            let items = [];
+            let ultimoLote = null;
+            let cantidad = 1;
+
+            const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const fechaCorta = (iso) => iso ? iso.split('-').reverse().join('/') : '—';
+
+            function pintarResumen() {
+                $('sCliente').textContent = $('fCliente').value.trim() || '—';
+                $('sFecha').textContent = fechaCorta($('fFecha').value);
+                $('sLinea').textContent = $('fLinea').value;
+            }
+            function pintarItems() {
+                const tb = $('tbodyItems');
+                if (!items.length) { tb.innerHTML = '<tr class="empty-row"><td colspan="4">Aún no hay productos.</td></tr>'; return; }
+                tb.innerHTML = items.map((it, i) =>
+                    `<tr><td>${esc(it.modelo)}</td><td>${it.cantidad}</td><td>${esc(it.color)}</td>` +
+                    `<td><button class="btn-delete-red" type="button" data-i="${i}">Eliminar</button></td></tr>`).join('');
+            }
+            function setCantidad(n) { cantidad = Math.min(10000, Math.max(1, n)); $('fCantidad').textContent = cantidad; }
+
+            $('btnMenos').addEventListener('click', () => setCantidad(cantidad - 1));
+            $('btnMas').addEventListener('click', () => setCantidad(cantidad + 1));
+            $('btnDetalle').addEventListener('click', pintarResumen);
+            ['fCliente', 'fFecha', 'fLinea'].forEach((id) => $(id).addEventListener('change', pintarResumen));
+
+            $('btnProducto').addEventListener('click', () => {
+                const color = $('fColor').value.trim();
+                $('msgProducto').textContent = '';
+                if (!color) { $('msgProducto').textContent = 'Escribe el color del producto.'; return; }
+                const modelo = $('fModelo').value;
+                const ya = items.find((x) => x.modelo === modelo && x.color.toLowerCase() === color.toLowerCase());
+                if (ya) ya.cantidad += cantidad; else items.push({ modelo, color, cantidad });
+                $('fColor').value = ''; setCantidad(1); pintarItems();
+            });
+            $('tbodyItems').addEventListener('click', (e) => {
+                const b = e.target.closest('button[data-i]');
+                if (b) { items.splice(Number(b.dataset.i), 1); pintarItems(); }
+            });
+
+            function limpiar() {
+                items = []; ultimoLote = null; setCantidad(1);
+                $('fCliente').value = ''; $('fColor').value = ''; $('msgProducto').textContent = '';
+                pintarItems(); pintarResumen();
+            }
+            $('btnLimpiar').addEventListener('click', limpiar);
+
+            $('btnAceptar').addEventListener('click', async () => {
+                pintarResumen();
+                const btn = $('btnAceptar'); btn.disabled = true;
+                try {
+                    const r = await NS.postJSON('/api/produccion/pedidos', {
+                        cliente: $('fCliente').value, fecha_compromiso: $('fFecha').value,
+                        linea: $('fLinea').value, items,
+                    });
+                    NS.toast('Orden creada. Lote ' + r.lote + ' (' + r.ordenes.join(', ') + ')');
+                    const lote = r.lote; limpiar(); ultimoLote = lote;
+                } catch (e) { NS.toast(e.message, false); }
+                finally { btn.disabled = false; }
+            });
+
+            $('btnDocumento').addEventListener('click', () => {
+                if (!ultimoLote) { NS.toast('Primero acepta la orden para generar su documento.', false); return; }
+                window.location.href = '/produccion/documento/pedido?lote=' + encodeURIComponent(ultimoLote);
+            });
+
+            pintarResumen();
+        })();
+    </script>
+</body>
+</html>

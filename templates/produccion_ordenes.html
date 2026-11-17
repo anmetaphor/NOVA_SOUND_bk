@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Sound - Órdenes de Producción</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='produccion.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <span class="drawer-brand">NOVA SOUND</span>
+                <button class="close-drawer" id="closeDrawer">✕</button>
+            </div>
+            <nav class="drawer-nav">
+                <a href="{{ url_for('dashboard') }}" class="drawer-link">Inicio</a>
+                <a href="{{ url_for('ordenes_produccion') }}" class="drawer-link active">Producción</a>
+                <a href="{{ url_for('ensamble_registro') }}" class="drawer-link">Ensamble</a>
+            </nav>
+            <div class="drawer-footer-nav">
+                <hr class="drawer-divider" style="margin: 0 0 6px 0;">
+                <a href="{{ url_for('configuracion') }}" class="drawer-link">
+                    <span style="font-size: 1.1rem;">⚙</span> Configuración
+                </a>
+                <a href="{{ url_for('logout') }}" class="drawer-link logout">Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <header class="top-navbar">
+            <div class="nav-left">
+                <span class="menu-icon" id="openDrawer">☰</span>
+                <span class="nav-title">Producción</span>
+            </div>
+            <div class="nav-center">
+                <div class="navbar-brand-logo">
+                    <svg viewBox="0 0 200 65" class="nav-wave-svg" xmlns="http://www.w3.org/2000/svg">
+                        <g id="wave-bars-prod"></g>
+                    </svg>
+                    <span class="navbar-brand-text">NOVA SOUND</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <span class="user-badge">{{ user_badge }}</span>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+
+        <div class="sub-header-prod">
+            <span class="station-label">Estación de Producción | Línea {{ linea_activa }}</span>
+            <span class="page-main-title">Órdenes de producción</span>
+            
+            <div class="prod-dropdown-container" id="prodDropdown">
+                <button class="menu-dropdown-toggle" id="dropdownToggle">Menú de Producción ▾</button>
+                <div class="prod-dropdown-content">
+                    <a href="{{ url_for('ordenes_produccion') }}" class="active">Órdenes de producción</a>
+                    <a href="{{ url_for('detalles_pedido') }}">Detalles del pedido</a>
+                    <a href="{{ url_for('grafico_global') }}">Gráfico global</a>
+                    <a href="{{ url_for('grafico_pedido') }}">Gráfico por pedido</a>
+                    <a href="{{ url_for('crear_orden') }}">Crear orden nueva</a>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-body">
+            <div class="card table-card">
+                <div class="table-actions-header">
+                    <button class="btn-filters"><span class="filter-icon">⚙</span> Filtros</button>
+                    <div class="pagination">
+                        <a class="page-btn" href="{{ url_pagina(info.page - 1) if info.page > 1 else '#' }}">&lt;</a>
+                        {% for n in ventana_paginas(info.page, info.pages) %}
+                        <a class="page-btn {{ 'active' if n == info.page }}" href="{{ url_pagina(n) }}">{{ n }}</a>
+                        {% endfor %}
+                        <a class="page-btn" href="{{ url_pagina(info.page + 1) if info.page < info.pages else '#' }}">&gt;</a>
+                    </div>
+                </div>
+                <form method="get" class="filters-panel" id="filtersPanel" data-activo="{{ '1' if filtros.get('cliente') or filtros.get('lote') or filtros.get('estado') or filtros.get('desde') or filtros.get('hasta') else '0' }}">
+                    <label>Cliente<input type="text" name="cliente" value="{{ filtros.get('cliente', '') }}"></label>
+                    <label>Lote<input type="text" name="lote" value="{{ filtros.get('lote', '') }}"></label>
+                    <label>Estado
+                        <select name="estado">
+                            <option value="">Todos</option>
+                            {% for e in ['En proceso', 'Finalizado', 'Cancelado'] %}<option value="{{ e }}" {{ 'selected' if filtros.get('estado') == e }}>{{ e }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <label>Desde<input type="date" name="desde" value="{{ filtros.get('desde', '') }}"></label>
+                    <label>Hasta<input type="date" name="hasta" value="{{ filtros.get('hasta', '') }}"></label>
+                    <button type="submit">Aplicar</button>
+                    <a class="btn-clear-link" href="{{ request.path }}">Limpiar</a>
+                </form>
+                <div class="table-responsive">
+                    <table class="prod-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Lote</th>
+                                <th>Cliente</th>
+                                <th>Fecha creación</th>
+                                <th>Fecha compromiso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for f in filas %}
+                            <tr><td>{{ f.codigo }}</td><td>{{ f.lote }}</td><td>{{ f.cliente }}</td><td>{{ f.fecha_creacion.strftime("%d/%m/%Y %H:%M") }}</td><td>{{ f.fecha_compromiso.strftime("%d/%m/%Y") }}</td></tr>
+                            {% else %}
+                            <tr class="empty-row"><td colspan="5">No hay registros para mostrar.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-bar">
+            <span>Bocinas Bluetooth® · L1 / L2 / L3 · T1 · 05:00–14:00</span>
+            <span class="footer-right">NOVA SOUND · Producción · Uso interno</span>
+        </footer>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById('openDrawer');
+        const closeBtn = document.getElementById('closeDrawer');
+        const drawer = document.getElementById('sideDrawer');
+        const overlay = document.getElementById('sidebarOverlay');
+        function toggleDrawer(state) {
+            drawer.classList.toggle('open', state);
+            overlay.classList.toggle('active', state);
+        }
+        openBtn.addEventListener('click', () => toggleDrawer(true));
+        closeBtn.addEventListener('click', () => toggleDrawer(false));
+        overlay.addEventListener('click', () => toggleDrawer(false));
+
+        const dropdownContainer = document.getElementById('prodDropdown');
+        const dropdownToggle = document.getElementById('dropdownToggle');
+        if (dropdownToggle && dropdownContainer) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContainer.classList.toggle('active');
+            });
+            window.addEventListener('click', () => {
+                dropdownContainer.classList.remove('active');
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const temaGuardado = localStorage.getItem('nova_tema');
+            const fuenteGuardada = localStorage.getItem('nova_fuente');
+
+            if (temaGuardado && temaGuardado.includes('Tema Claro')) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            if (fuenteGuardada && fuenteGuardada.includes('Grande')) {
+                document.body.classList.add('large-text');
+            } else {
+                document.body.classList.remove('large-text');
+            }
+        });
+
+        function renderNavbarWave(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const totalBars = 31;
+            const center = (totalBars - 1) / 2;
+            const spacing = 4.2;
+            const startX = 18;
+            for (let i = 0; i < totalBars; i++) {
+                const distFromCenter = Math.abs(i - center);
+                const globalEnvelope = Math.exp(-Math.pow(distFromCenter / 10, 2));
+                const threePeaks = 0.25 + 0.75 * Math.pow(Math.cos((distFromCenter / 8) * Math.PI), 2);
+                let barHeight = 26 * globalEnvelope * threePeaks;
+                barHeight = Math.max(barHeight, 2);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', startX + i * spacing);
+                rect.setAttribute('y', 15 - barHeight / 2);
+                rect.setAttribute('width', '2');
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', '1');
+                rect.setAttribute('fill', '#ffffff');
+                container.appendChild(rect);
+            }
+        }
+        renderNavbarWave('wave-bars-prod');
+    </script>
+    <script src="{{ url_for('static', filename='api.js') }}"></script>
+</body>
+</html>
